@@ -1,0 +1,101 @@
+:root {
+  --primary: #0b6e6e;
+  --dark: #102a43;
+  --accent: #4dd3c2;
+  --success: #2bb673;
+  --light: #f8fafc;
+  --danger: #dc2626;
+  --border: #d8e2ec;
+  --gradient: linear-gradient(135deg, #0b6e6e 0%, #4dd3c2 100%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--light);
+  color: var(--dark);
+  font-family: var(--font-arabic), var(--font-latin), sans-serif;
+}
+
+.container {
+  min-height: 100vh;
+  padding: 24px;
+  display: grid;
+  gap: 16px;
+}
+
+.header {
+  background: var(--gradient);
+  color: #fff;
+  border-radius: 16px;
+  padding: 22px;
+}
+
+.sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.card,
+.tableWrap {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.title {
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+}
+
+.kpi {
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  text-align: right;
+  padding: 9px 8px;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.badge {
+  border-radius: 999px;
+  display: inline-block;
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.badgeOk {
+  background: color-mix(in srgb, var(--success) 24%, #fff);
+  color: #1f7c4c;
+}
+
+.badgeWarn {
+  background: color-mix(in srgb, #f59e0b 30%, #fff);
+  color: #9a6507;
+}
+
+.badgeDanger {
+  background: color-mix(in srgb, var(--danger) 24%, #fff);
+  color: #a02828;
+}
+
+.note {
+  color: #5c6d80;
+  margin: 6px 0 0;
+}
