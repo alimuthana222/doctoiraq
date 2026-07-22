@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/domain.dart';
@@ -143,11 +141,11 @@ class SupabaseNabdaRepository implements NabdaRepository {
 
   @override
   Future<List<Doctor>> getDoctors({String? specialty, bool availableTodayOnly = false}) async {
-    var query = client.from('staff').select('id,full_name,specialty');
-    query = query.eq('role', 'doctor');
+    var query = client.from('staff').select('id,full_name,specialty,clinic_id').eq('role', 'doctor');
     if (specialty != null && specialty.isNotEmpty) {
       query = query.eq('specialty', specialty);
     }
+
     final rows = await query;
     final doctors = (rows as List)
         .map(
@@ -155,7 +153,7 @@ class SupabaseNabdaRepository implements NabdaRepository {
             id: r['id'] as String,
             fullName: (r['full_name'] ?? '') as String,
             specialty: (r['specialty'] ?? 'عام') as String,
-            clinic: 'عيادة',
+            clinic: (r['clinic_id'] ?? 'clinic') as String,
             distanceKm: 0,
             rating: 4.5,
             availableToday: true,
@@ -165,15 +163,75 @@ class SupabaseNabdaRepository implements NabdaRepository {
           ),
         )
         .toList();
+
     if (!availableTodayOnly) return doctors;
     return doctors.where((d) => d.availableToday).toList();
   }
 
   @override
-  Future<List<Appointment>> getAppointments() async => [];
+  Future<List<Appointment>> getAppointments() async {
+    final rows = await client
+        .from('appointments')
+        .select('id,scheduled_at,duration_minutes,status,reason,staff(id,full_name,specialty)')
+        .order('scheduled_at', ascending: false);
+
+    return (rows as List).map((r) {
+      final doctorJson = r['staff'] as Map<String, dynamic>? ?? <String, dynamic>{};
+      final doctor = Doctor(
+        id: (doctorJson['id'] ?? 'unknown').toString(),
+        fullName: (doctorJson['full_name'] ?? 'طبيب').toString(),
+        specialty: (doctorJson['specialty'] ?? 'عام').toString(),
+        clinic: 'clinic',
+        distanceKm: 0,
+        rating: 4.5,
+        availableToday: true,
+        bio: '—',
+        feeIqd: 0,
+        timeSlots: const [],
+      );
+
+      final statusRaw = (r['status'] ?? 'pending').toString();
+      final status = switch (statusRaw) {
+        'confirmed' => AppointmentStatus.confirmed,
+        'completed' => AppointmentStatus.completed,
+        'cancelled' => AppointmentStatus.cancelled,
+        'no_show' => AppointmentStatus.noShow,
+        _ => AppointmentStatus.pending,
+      };
+
+      return Appointment(
+        id: r['id'].toString(),
+        doctor: doctor,
+        scheduledAt: DateTime.parse(r['scheduled_at'] as String),
+        durationMinutes: (r['duration_minutes'] as num?)?.toInt() ?? 30,
+        status: status,
+        reason: r['reason']?.toString(),
+      );
+    }).toList();
+  }
 
   @override
-  Future<List<MedicalRecord>> getMedicalRecords() async => [];
+  Future<List<MedicalRecord>> getMedicalRecords() async {
+    final rows = await client
+        .from('medical_records')
+        .select('id,created_at,notes,attachments,appointments(clinic_id,staff(full_name))')
+        .order('created_at', ascending: false);
+
+    return (rows as List).map((r) {
+      final appointment = r['appointments'] as Map<String, dynamic>? ?? <String, dynamic>{};
+      final staff = appointment['staff'] as Map<String, dynamic>? ?? <String, dynamic>{};
+      final rawAttachments = r['attachments'];
+      final attachments = rawAttachments is List ? rawAttachments.map((e) => e.toString()).toList() : <String>[];
+      return MedicalRecord(
+        id: r['id'].toString(),
+        date: DateTime.tryParse((r['created_at'] ?? '').toString()) ?? DateTime.now(),
+        clinic: (appointment['clinic_id'] ?? 'clinic').toString(),
+        doctorName: (staff['full_name'] ?? 'طبيب').toString(),
+        summary: (r['notes'] ?? '').toString(),
+        attachments: attachments,
+      );
+    }).toList();
+  }
 
   @override
   Future<void> bookAppointment({
@@ -195,8 +253,6 @@ class SupabaseNabdaRepository implements NabdaRepository {
 
   @override
   Future<void> cancelAppointment(String appointmentId) async {
-    await client
-        .from('appointments')
-        .update({'status': 'cancelled'}).eq('id', appointmentId);
+    await client.from('appointments').update({'status': 'cancelled'}).eq('id', appointmentId);
   }
 }

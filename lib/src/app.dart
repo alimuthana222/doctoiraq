@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/repository.dart';
+import 'core/supabase_config.dart';
 import 'core/theme.dart';
 import 'models/domain.dart';
 
@@ -11,13 +13,18 @@ class NabdaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Intl.defaultLocale = 'ar';
+
+    final repository = SupabaseConfig.isConfigured
+        ? SupabaseNabdaRepository(Supabase.instance.client)
+        : MockNabdaRepository();
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'nabda',
       theme: NabdaTheme.light(),
       home: Directionality(
         textDirection: TextDirection.rtl,
-        child: NabdaRoot(repository: MockNabdaRepository()),
+        child: NabdaRoot(repository: repository),
       ),
     );
   }
@@ -43,6 +50,7 @@ class _NabdaRootState extends State<NabdaRoot> {
         onAuthenticated: () => setState(() => _authenticated = true),
       );
     }
+
     return MainShell(repository: widget.repository);
   }
 }
@@ -333,7 +341,7 @@ class _SearchDoctorsScreenState extends State<SearchDoctorsScreen> {
                 ),
                 builder: (context, snapshot) {
                   final doctors = snapshot.data ?? const <Doctor>[];
-                  if (doctors.isEmpty) return const Center(child: Text('لا توجد نتائج مطابقة')); 
+                  if (doctors.isEmpty) return const Center(child: Text('لا توجد نتائج مطابقة'));
                   return ListView.builder(
                     itemCount: doctors.length,
                     itemBuilder: (context, index) {
