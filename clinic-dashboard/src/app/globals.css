@@ -18,7 +18,7 @@ body {
   padding: 0;
   background: var(--light);
   color: var(--dark);
-  font-family: var(--font-arabic), var(--font-latin), sans-serif;
+  font-family: "Tajawal", "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
 }
 
 a {
